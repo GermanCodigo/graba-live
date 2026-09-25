@@ -44,7 +44,10 @@ async function encontrarIframeUrl() {
 }
 
 async function main() {
-  const iframeUrl = await encontrarIframeUrl();
+  let iframeUrl = await encontrarIframeUrl();
+  if (iframeUrl.startsWith('//')) {
+    iframeUrl = `https:${iframeUrl}`; // el src viene con protocolo relativo
+  }
   console.log(`Iframe del player: ${iframeUrl}`);
 
   const jsonUrl = iframeUrl.replace(/(\/live-stream\/[a-z0-9]+)(\?)/i, '$1.json$2');
