@@ -1,5 +1,7 @@
-Descargando página: https://www.mitelefe.com/telefe-en-vivo
-ERROR: No encontré el iframe de mdstrm.com en la página. Puede que Telefe haya cambiado el sitio o el proveedor de streaming.
+Abriendo https://www.mitelefe.com/telefe-en-vivo en un browser headless para encontrar el player...
+Iframe del player: //mdstrm.com/live-stream/6a024684fd4ca6a938f3a118?player=69f8d6e334a190b16647b23b&access_token=mcpTW9XQplbEU8KNNhKvMWHKl1xtSnJA9BXLXLroCGgU3VKQOWZvK4vVvjbiueQ5SCJGgJDHyaC
+Pidiendo configuración: //mdstrm.com/live-stream/6a024684fd4ca6a938f3a118.json?player=69f8d6e334a190b16647b23b&access_token=mcpTW9XQplbEU8KNNhKvMWHKl1xtSnJA9BXLXLroCGgU3VKQOWZvK4vVvjbiueQ5SCJGgJDHyaC
+ERROR: Failed to parse URL from //mdstrm.com/live-stream/6a024684fd4ca6a938f3a118.json?player=69f8d6e334a190b16647b23b&access_token=mcpTW9XQplbEU8KNNhKvMWHKl1xtSnJA9BXLXLroCGgU3VKQOWZvK4vVvjbiueQ5SCJGgJDHyaC
 
-resultado: success
-fecha (UTC): 2026-09-25T00:49:24Z
+resultado: failure
+fecha (UTC): 2026-09-25T00:52:12Z
