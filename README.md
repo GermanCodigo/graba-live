@@ -1,20 +1,36 @@
 # graba-live
 
 Graba automáticamente la transmisión en vivo de [Telefe](https://www.mitelefe.com/telefe-en-vivo)
-y la sube a Google Drive. Corre 100% en GitHub Actions — no depende de
-que ninguna computadora esté prendida.
+y la sube a Google Drive.
+
+**Importante:** mdstrm (el proveedor del stream de Telefe) bloquea los
+pedidos que no vienen de una IP Argentina — incluidos los servidores de
+GitHub Actions. Por eso el paso de grabación no corre en la nube: corre
+en tu propia máquina (Mac o Windows), registrada como "self-hosted
+runner" de este repo. GitHub sigue siendo el que decide *cuándo* grabar
+(el cron y el botón "grabar ahora"); tu máquina es la que efectivamente
+hace la grabación. Ver:
+
+- [`README-runner-mac.md`](./README-runner-mac.md) — instalación en Mac (M5 / Apple Silicon).
+- [`README-runner-windows.md`](./README-runner-windows.md) — instalación en Windows 10.
+
+Con al menos una de las dos prendida y con el runner instalado, todo lo
+demás (horario, días, "grabar ahora", subida a Drive) funciona igual
+que si fuera 100% en la nube.
 
 ## Cómo funciona
 
 1. Un workflow de GitHub Actions (`.github/workflows/graba-live.yml`)
-   corre cada 5 minutos.
+   corre cada 5 minutos en los servidores de GitHub — este chequeo sí
+   es 100% en la nube y gratis.
 2. En cada corrida, mira `config.json`: si `enabled` es `true`, hoy
    está en `daysOfWeek`, y la hora actual en Argentina coincide con
-   `hour`/`minute`, arranca a grabar. Si no, no hace nada (corrida
-   gratis e instantánea).
-3. `extract-and-record.js` entra a la página de Telefe, encuentra la
-   URL real del video (no la página completa, solo el stream) y lo
-   graba con `ffmpeg` durante `durationMinutes`.
+   `hour`/`minute`, dispara el segundo job. Si no, no hace nada
+   (corrida gratis e instantánea).
+3. El segundo job corre en tu Mac o Windows (el runner que tengas
+   prendido): `extract-and-record.js` entra a la página de Telefe,
+   encuentra la URL real del video (no la página completa, solo el
+   stream) y lo graba con `ffmpeg` durante `durationMinutes`.
 4. `upload-to-drive.js` sube el `.mp4` resultante a la carpeta de
    Google Drive configurada. La grabación también queda como
    "artifact" de la corrida en GitHub Actions por 14 días, como

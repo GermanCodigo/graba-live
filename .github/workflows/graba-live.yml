@@ -33,10 +33,18 @@ jobs:
   grabar:
     needs: chequear
     if: needs.chequear.outputs.debe_grabar == 'true'
-    runs-on: ubuntu-latest
+    # Corre en TU máquina (Mac o Windows, la que esté prendida y con el
+    # runner activo), no en un servidor de GitHub — necesario porque el
+    # proveedor del stream bloquea IPs fuera de Argentina.
+    runs-on: [self-hosted]
     timeout-minutes: 180
     permissions:
       contents: write
+    defaults:
+      run:
+        # Todos los pasos usan sintaxis bash. En Windows, esto usa el
+        # bash que trae Git for Windows (ver README-runner-windows.md).
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -44,14 +52,19 @@ jobs:
         with:
           node-version: 22
 
-      - name: Instalar ffmpeg
-        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - name: Verificar ffmpeg
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            echo "ffmpeg no está instalado en esta máquina. Corré el script de instalación (ver README-runner-mac.md / README-runner-windows.md) antes de grabar." >&2
+            exit 1
+          fi
+          ffmpeg -version | head -1
 
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
 
       - name: Instalar navegador de Playwright
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Leer configuración
         id: cfg
@@ -91,15 +104,15 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
-      # Los logs normales de Actions viven en Azure Blob Storage, que
-      # algunos entornos (como el sandbox donde armamos esto) no pueden
-      # alcanzar. Como respaldo, dejamos el resultado de cada corrida
-      # commiteado en el propio repo (estado.txt), fácil de leer siempre.
+      # Los logs normales de Actions viven en Azure Blob Storage; si en
+      # algún momento no se pueden ver desde donde estés mirando, este
+      # archivo commiteado en el repo es un respaldo simple de leer.
       - name: Publicar estado.txt en el repo
         if: always()
         run: |
           echo "" >> estado.txt
           echo "resultado: ${{ steps.grabar.outcome }}" >> estado.txt
+          echo "máquina: $(hostname)" >> estado.txt
           echo "fecha (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> estado.txt
           git config user.name "graba-live-bot"
           git config user.email "actions@users.noreply.github.com"
