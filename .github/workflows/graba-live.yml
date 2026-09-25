@@ -13,6 +13,10 @@ on:
         description: 'Grabar ahora aunque config.json diga que no corresponde'
         type: boolean
         default: true
+      duracion_segundos_prueba:
+        description: 'Duración en segundos para esta corrida (vacío = usar config.json)'
+        type: string
+        default: '20'
 
 jobs:
   chequear:
@@ -46,9 +50,15 @@ jobs:
 
       - name: Leer configuración
         id: cfg
+        env:
+          DURACION_PRUEBA: ${{ inputs.duracion_segundos_prueba }}
         run: |
           echo "pageurl=$(node -pe 'require("./config.json").pageUrl')" >> "$GITHUB_OUTPUT"
-          echo "duration=$(node -pe 'require("./config.json").durationMinutes')" >> "$GITHUB_OUTPUT"
+          if [ -n "$DURACION_PRUEBA" ]; then
+            echo "duration=$(node -pe "$DURACION_PRUEBA/60")" >> "$GITHUB_OUTPUT"
+          else
+            echo "duration=$(node -pe 'require("./config.json").durationMinutes')" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Grabar la transmisión
         env:

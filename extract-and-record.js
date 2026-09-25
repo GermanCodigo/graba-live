@@ -78,9 +78,24 @@ async function main() {
   const sizeMB = (fs.statSync(outFile).size / 1024 / 1024).toFixed(1);
   console.log(`Listo: ${outFile} (${sizeMB} MB)`);
   console.log(`OUT_FILE=${outFile}`);
+
+  const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryFile) {
+    fs.appendFileSync(
+      summaryFile,
+      `\n### ✅ Grabación OK\n\n- HLS: \`${hlsUrl}\`\n- Archivo: \`${path.basename(outFile)}\` (${sizeMB} MB)\n`
+    );
+  }
 }
 
 main().catch((err) => {
   console.error('ERROR:', err.message);
+  const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryFile) {
+    fs.appendFileSync(
+      summaryFile,
+      `\n### ❌ Error en la grabación\n\n\`\`\`\n${err.message}\n\`\`\`\n`
+    );
+  }
   process.exit(1);
 });
