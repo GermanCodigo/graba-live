@@ -47,8 +47,11 @@ jobs:
       - name: Instalar ffmpeg
         run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
 
-      - name: Instalar dependencias (para subida a Drive)
+      - name: Instalar dependencias
         run: npm install --no-audit --no-fund
+
+      - name: Instalar navegador de Playwright
+        run: npx playwright install --with-deps chromium
 
       - name: Leer configuración
         id: cfg
@@ -68,7 +71,9 @@ jobs:
         env:
           PAGE_URL: ${{ steps.cfg.outputs.pageurl }}
           DURATION_MINUTES: ${{ steps.cfg.outputs.duration }}
-        run: node extract-and-record.js 2>&1 | tee estado.txt
+        run: |
+          set -o pipefail
+          node extract-and-record.js 2>&1 | tee estado.txt
 
       - name: Subir a Google Drive (si está configurado)
         if: steps.grabar.outcome == 'success'
