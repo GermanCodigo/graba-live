@@ -35,6 +35,8 @@ jobs:
     if: needs.chequear.outputs.debe_grabar == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -61,21 +63,45 @@ jobs:
           fi
 
       - name: Grabar la transmisión
+        id: grabar
+        continue-on-error: true
         env:
           PAGE_URL: ${{ steps.cfg.outputs.pageurl }}
           DURATION_MINUTES: ${{ steps.cfg.outputs.duration }}
-        run: node extract-and-record.js
+        run: node extract-and-record.js 2>&1 | tee estado.txt
 
       - name: Subir a Google Drive (si está configurado)
+        if: steps.grabar.outcome == 'success'
         env:
           DRIVE_SA_KEY_B64: ${{ secrets.DRIVE_SA_KEY_B64 }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: node upload-to-drive.js
 
       - name: Guardar también como artifact de la corrida
+        if: steps.grabar.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: grabacion-${{ github.run_id }}
           path: grabaciones/*.mp4
           retention-days: 14
           if-no-files-found: warn
+
+      # Los logs normales de Actions viven en Azure Blob Storage, que
+      # algunos entornos (como el sandbox donde armamos esto) no pueden
+      # alcanzar. Como respaldo, dejamos el resultado de cada corrida
+      # commiteado en el propio repo (estado.txt), fácil de leer siempre.
+      - name: Publicar estado.txt en el repo
+        if: always()
+        run: |
+          echo "" >> estado.txt
+          echo "resultado: ${{ steps.grabar.outcome }}" >> estado.txt
+          echo "fecha (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> estado.txt
+          git config user.name "graba-live-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -f estado.txt
+          git commit -m "estado: ${{ steps.grabar.outcome }} (run ${{ github.run_id }})" || echo "nada para commitear"
+          git push || echo "no se pudo pushear el estado"
+
+      - name: Fallar el job si la grabación falló
+        if: steps.grabar.outcome == 'failure'
+        run: exit 1
