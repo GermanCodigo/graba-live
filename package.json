@@ -1,0 +1,14 @@
+{
+  "name": "graba-live-telefe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Graba automáticamente la transmisión en vivo de Telefe y la sube a Google Drive.",
+  "scripts": {
+    "grabar": "node extract-and-record.js",
+    "subir": "node upload-to-drive.js",
+    "chequear": "node check-schedule.js"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}

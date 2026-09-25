@@ -1,0 +1,4 @@
+node_modules/
+grabaciones/
+*.mp4
+.DS_Store

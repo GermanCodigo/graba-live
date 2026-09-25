@@ -1,0 +1,8 @@
+{
+  "pageUrl": "https://www.mitelefe.com/telefe-en-vivo",
+  "durationMinutes": 90,
+  "hour": 22,
+  "minute": 0,
+  "daysOfWeek": [0, 1, 2, 3, 4, 5, 6],
+  "enabled": true
+}

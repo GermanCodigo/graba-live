@@ -1,0 +1,71 @@
+name: Grabar Telefe en vivo
+
+on:
+  # Corre cada 5 minutos y decide adentro si corresponde grabar,
+  # comparando la hora actual (ART) contra config.json. Así el
+  # horario/días/on-off se controlan editando config.json (o el
+  # panel), sin tener que tocar este archivo cron.
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      forzar:
+        description: 'Grabar ahora aunque config.json diga que no corresponde'
+        type: boolean
+        default: true
+
+jobs:
+  chequear:
+    runs-on: ubuntu-latest
+    outputs:
+      debe_grabar: ${{ steps.check.outputs.debe_grabar }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        env:
+          FORZAR: ${{ inputs.forzar }}
+        run: node check-schedule.js
+
+  grabar:
+    needs: chequear
+    if: needs.chequear.outputs.debe_grabar == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+
+      - name: Instalar dependencias (para subida a Drive)
+        run: npm install --no-audit --no-fund
+
+      - name: Leer configuración
+        id: cfg
+        run: |
+          echo "pageurl=$(node -pe 'require("./config.json").pageUrl')" >> "$GITHUB_OUTPUT"
+          echo "duration=$(node -pe 'require("./config.json").durationMinutes')" >> "$GITHUB_OUTPUT"
+
+      - name: Grabar la transmisión
+        env:
+          PAGE_URL: ${{ steps.cfg.outputs.pageurl }}
+          DURATION_MINUTES: ${{ steps.cfg.outputs.duration }}
+        run: node extract-and-record.js
+
+      - name: Subir a Google Drive (si está configurado)
+        env:
+          DRIVE_SA_KEY_B64: ${{ secrets.DRIVE_SA_KEY_B64 }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+        run: node upload-to-drive.js
+
+      - name: Guardar también como artifact de la corrida
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabacion-${{ github.run_id }}
+          path: grabaciones/*.mp4
+          retention-days: 14
+          if-no-files-found: warn
